@@ -1,5 +1,3 @@
-
-
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -8,7 +6,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 def scrape_daraz(query, max_pages=1):
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")   # keep background mode for API
+    options.add_argument("--headless")   # run in background
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
 
@@ -32,17 +30,29 @@ def scrape_daraz(query, max_pages=1):
             if link and link.startswith("//"):
                 link = "https:" + link
 
-            price, rating = "", ""
+            price, rating, image = "", "", ""
             try:
                 container = product.find_element(By.XPATH, "./ancestor::div[contains(@class,'gridItem')]")
+
+                # Extract price
                 try:
                     price = container.find_element(By.XPATH, ".//span[contains(@class,'currency')]").text
                 except:
                     pass
+
+                # Extract rating
                 try:
                     rating = container.find_element(By.XPATH, ".//span[contains(@class,'rating')]").text
                 except:
                     pass
+
+                # Extract image
+                try:
+                    img_tag = container.find_element(By.XPATH, ".//img")
+                    image = img_tag.get_attribute("src") or img_tag.get_attribute("data-src")
+                except:
+                    pass
+
             except:
                 pass
 
@@ -51,33 +61,10 @@ def scrape_daraz(query, max_pages=1):
                     "title": title,
                     "price": price,
                     "rating": rating,
+                    "image": image,
                     "link": link,
                     "page": page
                 })
 
     driver.quit()
     return data
-
-
-# # server.py# scraper.py
-# import requests
-# from bs4 import BeautifulSoup
-
-# def scrape_daraz(query, page=1):
-#     url = f"https://www.daraz.pk/catalog/?q={query}&page={page}"
-#     headers = {"User-Agent": "Mozilla/5.0"}
-#     r = requests.get(url, headers=headers)
-
-#     soup = BeautifulSoup(r.text, "html.parser")
-
-#     products = []
-#     for item in soup.select(".box--pRqdD"):  # may need adjustment
-#         title = item.select_one(".title--wFj93")
-#         price = item.select_one(".price--NVB62")
-#         if title and price:
-#             products.append({
-#                 "title": title.get_text(strip=True),
-#                 "price": price.get_text(strip=True)
-#             })
-
-#     return products
